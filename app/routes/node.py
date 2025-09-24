@@ -99,12 +99,16 @@ async def node_logs(
     admin = get_admin(db, token)
 
     if not admin or not admin.is_sudo:
-        return await websocket.close(reason="You're not allowed", code=4403)
+        await websocket.close(reason="You're not allowed", code=4403)
+        return
 
     if not marznode.nodes.get(node_id):
-        return await websocket.close(reason="Node not found", code=4404)
+        await websocket.close(reason="Node not found", code=4404)
+        return
 
     await websocket.accept()
+    websocket_closed = False
+    
     try:
         async for line in marznode.nodes[node_id].get_logs(
             name=backend, include_buffer=include_buffer
@@ -112,9 +116,15 @@ async def node_logs(
             try:
                 await websocket.send_text(line)
             except WebSocketDisconnect:
+                websocket_closed = True
                 break
     finally:
-        await websocket.close()
+        if not websocket_closed:
+            try:
+                await websocket.close()
+            except RuntimeError:
+                # WebSocket already closed, ignore the error
+                pass
 
 
 @router.put("/{node_id}", response_model=NodeResponse)
