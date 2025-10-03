@@ -40,6 +40,8 @@ export const useNodesSettingsQuery = (node: NodeType, backend: string) => {
     return useQuery({
         queryKey,
         queryFn: fetchNodesSettings,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
         initialData: { config: "", format: NodeBackendSettingConfigFormat.PLAIN },
     });
 };
