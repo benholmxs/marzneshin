@@ -29,13 +29,16 @@ const parseLanguage = (format: NodeBackendSettingConfigFormat) =>
 
 export const useNodesSettings = (entity: NodeType, backend: string) => {
   const { data, isFetching } = useNodesSettingsQuery(entity, backend);
-  const [config, setConfig] = useState<string>(data.config);
+  const [config, setConfig] = useState<string>(parseConfig(data));
   const [payloadValidity, setPayloadValidity] = useState<boolean>(true);
   const mutate = useNodesSettingsMutation();
   const language = parseLanguage(data.format);
 
   useEffect(() => {
-    if (!isFetching) setConfig(parseConfig(data));
+    if (!isFetching) {
+      const parsed = parseConfig(data);
+      setConfig((prev: string) => (prev !== parsed ? parsed : prev));
+    }
   }, [isFetching, data]);
 
   const handleEditorValidation = (markers: any[]) => {
@@ -49,7 +52,7 @@ export const useNodesSettings = (entity: NodeType, backend: string) => {
   const handleConfigChange = (newConfig: string | undefined) => {
     if (newConfig) {
       try {
-        setConfig(parseConfig({ config: newConfig, format: data.format }));
+        setConfig(newConfig);
         setPayloadValidity(true);
       } catch (error) {
         setPayloadValidity(false);
@@ -61,7 +64,7 @@ export const useNodesSettings = (entity: NodeType, backend: string) => {
     payloadValidity,
     language,
     isFetching,
-    config: parseConfig(data),
+    config,
     handleConfigSave,
     handleConfigChange,
     handleEditorValidation,
